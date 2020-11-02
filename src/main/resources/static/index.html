@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Play chess online!</title>
+		<link rel="icon" type="image/gif" href="images/kingb.svg">
+	</head>
+	<body>
+		<link rel="stylesheet" href="/css/main.css">
+		<noscript>Sorry! No JS support!</noscript>
+
+		<div id="username-page">
+			<div class="username-page-container">
+				<h1 class="title">Type your username</h1>
+				<form id="usernameForm" name="usernameForm">
+					<div class="form-group">
+						<input type="text" id="name" autocomplete="off" class="form-group" />
+					</div>
+					<div class="form-group">
+						<button type="submit" class="username-submit">Start playing</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<div id="game" class="hidden">
+			<form id="moveForm" name="movForm">
+				<div class="form-group">
+					<input type="text" id="position" placeholder="e2" autocomplete="off" class="form-group" />
+					<input type="text" id="destination" placeholder="e4" autocomplete="off" class="form-group" />
+				</div>
+				<div class="form-group">
+					<button type="submit" class="move-submit">Play!</button>
+					<button type="submit" class="offer-draw">Offer draw!</button>
+					<button type="submit" class="resign">Resign :(</button>
+				</div>
+			</form>
+		</div>
+
+		<div id="board" class="hidden">
+			<canvas id="boardCanvas"></canvas>
+		</div>
+
+		<br><br><br>
+
+		<div id="connecting" class="hidden">
+			connecting...
+		</div>
+
+		<div id="chat-window" class="hidden">
+			<div class="chat-container">
+				<div class="chat-header">
+					<h5>Game Chat</h5>
+				</div>
+				<ul id="messageArea">
+				</ul>
+				<div class="chat-send">
+					<form id="messageForm" name="messageForm">
+						<input type="text" id="message" placeholder="Type a message..." autocomplete="off" class="form-control" />
+						<button type="submit" class="primary">Send Message </button>
+					</form>
+				</div>
+			</div>
+		</div>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.4/sockjs.min.js"></script>
+    	<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    	<script src="/js/main.js"></script>
+	</body>
+</html>

@@ -21,6 +21,11 @@ var initPos = null;
 
 var canvas = document.getElementById("boardCanvas");
 var ctx = canvas.getContext("2d");
+var sqSize = 50;
+var topX = 50;
+var topY = 50;
+
+var origin = null;
 
 var initPos = {
 	'a2': 'P',
@@ -94,10 +99,10 @@ function onError(error) {
 }
 
 function playMove(event) {
-	var pos = position.value.trim();
-	var dest = destination.value.trim();
+	let pos = position.value.trim();
+	let dest = destination.value.trim();
 	if (pos && dest && stompClient) {
-		var moveMessage = {
+		let moveMessage = {
 			sender: username,
 			content: pos+"-"+dest,
 			type: 'PLAY'
@@ -110,9 +115,9 @@ function playMove(event) {
 }
 
 function sendMessage(event) {
-	var messageContent = messageInput.value.trim();
+	let messageContent = messageInput.value.trim();
 	if (messageContent && stompClient) {
-		var chatMessage = {
+		let chatMessage = {
 			sender: username,
 			content: messageInput.value,
 			type: 'CHAT'
@@ -124,8 +129,8 @@ function sendMessage(event) {
 }
 
 function onMessageReceived(payload) {
-	var message = JSON.parse(payload.body);
-	var messageElement = document.createElement('li');
+	let message = JSON.parse(payload.body);
+	let messageElement = document.createElement('li');
 
 	if (message.type === 'JOIN') {
 		messageElement.classList.add('event-message');
@@ -140,8 +145,8 @@ function onMessageReceived(payload) {
 	} else {
 		messageElement.classList.add('chat-message');
 	}
-	var textElement = document.createElement('p');
-	var messageText = document.createTextNode(message.content);
+	let textElement = document.createElement('p');
+	let messageText = document.createTextNode(message.content);
 	textElement.appendChild(messageText);
 	messageElement.appendChild(textElement);
 	messageArea.appendChild(messageElement);
@@ -171,7 +176,7 @@ var pieceImageNames = {
 };
 
 var pieceImages = {};
-for (var p in pieceImages) {
+for (let p in pieceImages) {
 	if (position.hasOwnProperty(key))
 	{
 		pieceImages[p] = new Image();
@@ -189,34 +194,28 @@ function drawPiece(piece, file, rank) {
 	//console.log("drawing "+piece+" in "+file+""+rank+"!");
 	//ctx.moveTo(0, 0); // will be based on the coordinates!!
 	ctx.moveTo(50+30*(file.charCodeAt(0)-97), 50+30*(8-rank));
-	var img = new Image();
+	let img = new Image();
 	img.src = "../images/"+getImage(piece);
 	ctx.drawImage(img, 30, 30); // size will be based on scale
 	ctx.restore();
 }
 
 function drawChessBoard(position) {
-	const sqSize = 50;
-	const topX = 50;
-	const topY = 50;
-	let canvas = document.getElementById("boardCanvas");
-	var cntx = canvas.getContext("2d");
-
-	var i=1;
-	var j=1;
+	let i=1;
+	let j=1;
 	function draw(i, j) {
-		cntx.fillStyle = ((i+j)%2==1) ? "#F5F5F5" : "#282828";
+		ctx.fillStyle = ((i+j)%2==1) ? "#F5F5F5" : "#282828";
 		let xOffset = topX + (i-1)*sqSize;
 		let yOffset = topY + (8-j)*sqSize;
-		cntx.fillRect(xOffset, yOffset, sqSize, sqSize);
-		var key = String.fromCharCode(i+96)+""+j;
+		ctx.fillRect(xOffset, yOffset, sqSize, sqSize);
+		let key = String.fromCharCode(i+96)+""+j;
 		if (position.hasOwnProperty(key)) {
-			var imgName = pieceImageNames[position[key]];
-			var img = new Image();
+			let imgName = pieceImageNames[position[key]];
+			let img = new Image();
 			img.src = "../images/"+imgName;
 			img.onload = function() {
-				console.log(i+""+j);
-				cntx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
+				//console.log(i+""+j);
+				ctx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
 				if (j>=8)
 				{
 					if (i>=8) {
@@ -303,7 +302,7 @@ function drawChessBoard(position) {
 function drawBoard() {
 	ctx.save();
 	ctx.moveTo(0, 0);
-	var img = new Image();
+	let img = new Image();
 	img.src = "../images/chessboard.png";
 	ctx.drawImage(img, 400, 400);
 	//ctx.restore();
@@ -321,10 +320,49 @@ function drawPosition(position) {
 }
 
 function updateMove(move) {
-	var [pos, dest] = move.split('-');
+	let [pos, dest] = move.split('-');
 	if (currentPos.hasOwnProperty(pos)) {
 		currentPos[dest] = currentPos[pos];
 		delete currentPos[pos];
 	}
 	drawPosition(currentPos);
 }
+
+function getSquare(x, y) {
+	//let xOffset = topX + (i-1)*sqSize;
+	//let yOffset = topY + (8-j)*sqSize;
+	let file = Math.ceil((x-topX) / sqSize);
+	let rank = Math.ceil(8 - (y-topY) / sqSize);
+	if (file<1 || file>8 || rank<1 || rank>8) {
+		return '';
+	}
+	let key = String.fromCharCode(file+96)+""+rank;
+	console.log(key);
+	return key;
+}
+
+//grab piece
+canvas.addEventListener('mousedown', e => {
+  let x = e.offsetX;
+  let y = e.offsetY;
+  origin = getSquare(x, y);
+});
+
+//leave piece, if one was grabbed
+canvas.addEventListener('mouseup', e => {
+  let x = e.offsetX;
+  let y = e.offsetY;
+  let dest = getSquare(x, y);
+  if (origin!='' || dest!='') {
+  	if (stompClient) {
+  		let moveMessage = {
+  			sender: username,
+  			content: origin+"-"+dest,
+  			type: 'PLAY'
+  		};
+  		stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(moveMessage));
+  		dest = '';
+  	}
+  }
+  origin = '';
+});

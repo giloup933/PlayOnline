@@ -19,6 +19,46 @@ var username = null;
 var currentPos = null;
 var initPos = null;
 
+var canvas = document.getElementById("boardCanvas");
+var ctx = canvas.getContext("2d");
+
+var initPos = {
+	'a2': 'P',
+	'b2': 'P',
+	'c2': 'P',
+	'd2': 'P',
+	'e2': 'P',
+	'f2': 'P',
+	'g2': 'P',
+	'h2': 'P',
+	'b1': 'N',
+	'g1': 'N',
+	'c1': 'B',
+	'f1': 'B',
+	'a1': 'R',
+	'h1': 'R',
+	'd1': 'Q',
+	'e1': 'K',
+	'a7': 'p',
+	'b7': 'p',
+	'c7': 'p',
+	'd7': 'p',
+	'e7': 'p',
+	'f7': 'p',
+	'g7': 'p',
+	'h7': 'p',
+	'b8': 'n',
+	'g8': 'n',
+	'c8': 'b',
+	'f8': 'b',
+	'a8': 'r',
+	'h8': 'r',
+	'd8': 'q',
+	'e8': 'k'
+};
+
+currentPos = initPos;
+
 function connect(event) {
 	username = document.querySelector('#name').value.trim();
 
@@ -95,6 +135,7 @@ function onMessageReceived(payload) {
 		message.content = message.sender + ' left!';
 	} else if (message.type === 'PLAY') {
 		messageElement.classList.add('event-message');
+		updateMove(message.content);
 		message.content = message.sender + ' played '+message.content;
 	} else {
 		messageElement.classList.add('chat-message');
@@ -114,87 +155,176 @@ moveForm.addEventListener('submit', playMove, true);
 //add listener to server notification about end of game
 //and then an option to offer rematch or get new game
 
-var pieceImages = {
-	'K': 'kingw.svg', 
-	'k': 'kingb.svg', 
-	'Q': 'queenw.svg', 
-	'q': 'queenb.svg', 
-	'R': 'rookw.svg', 
-	'r': 'rookb.svg', 
-	'B': 'bishopw.svg', 
-	'b': 'bishopb.svg', 
-	'N': 'knightw.svg', 
-	'n': 'knightb.svg', 
-	'P': 'pawnw.svg',
-	'p': 'pawnb.svg'
+var pieceImageNames = {
+	'K': 'white_king.svg', 
+	'k': 'black_king.svg', 
+	'Q': 'white_queen.svg', 
+	'q': 'black_queen.svg', 
+	'R': 'white_rook.svg', 
+	'r': 'black_rook.svg', 
+	'B': 'white_bishop.svg', 
+	'b': 'black_bishop.svg', 
+	'N': 'white_knight.svg', 
+	'n': 'black_knight.svg', 
+	'P': 'white_pawn.svg',
+	'p': 'black_pawn.svg'
 };
 
-var initPos = {
-	'a2': 'P',
-	'b2': 'P',
-	'c2': 'P',
-	'd2': 'P',
-	'e2': 'P',
-	'f2': 'P',
-	'g2': 'P',
-	'h2': 'P',
-	'b1': 'N',
-	'g1': 'N',
-	'c1': 'B',
-	'f1': 'B',
-	'a1': 'R',
-	'h1': 'R',
-	'd1': 'Q',
-	'e1': 'K',
-	'a7': 'p',
-	'b7': 'p',
-	'c7': 'p',
-	'd7': 'p',
-	'e7': 'p',
-	'f7': 'p',
-	'g7': 'p',
-	'h7': 'p',
-	'b8': 'n',
-	'g8': 'n',
-	'c8': 'b',
-	'f8': 'b',
-	'a8': 'r',
-	'h8': 'r',
-	'd8': 'q',
-	'e8': 'k'
-};
+var pieceImages = {};
+for (var p in pieceImages) {
+	if (position.hasOwnProperty(key))
+	{
+		pieceImages[p] = new Image();
+		pieceImages[p].src = "../images/"+pieceImageNames[p];
+		//drawPiece(position[key], key.charAt(0), key.charAt(1))
+	}
+}
+
 
 function getImage(piece) {
-	console.log(pieceImages[piece])
 	return pieceImages[piece];
 }
 
 function drawPiece(piece, file, rank) {
-	var canvas = document.getElementById("boardCanvas");
-	var ctx = canvas.getContext("2d");
-	ctx.moveTo(0, 0); // will be based on the coordinates!!
+	//console.log("drawing "+piece+" in "+file+""+rank+"!");
+	//ctx.moveTo(0, 0); // will be based on the coordinates!!
+	ctx.moveTo(50+30*(file.charCodeAt(0)-97), 50+30*(8-rank));
 	var img = new Image();
 	img.src = "../images/"+getImage(piece);
-	ctx.drawImage(img, 50, 50); // size will be based on scale
+	ctx.drawImage(img, 30, 30); // size will be based on scale
+	ctx.restore();
+}
+
+function drawChessBoard(position) {
+	const sqSize = 50;
+	const topX = 50;
+	const topY = 50;
+	let canvas = document.getElementById("boardCanvas");
+	var cntx = canvas.getContext("2d");
+
+	var i=1;
+	var j=1;
+	function draw(i, j) {
+		cntx.fillStyle = ((i+j)%2==1) ? "#F5F5F5" : "#282828";
+		let xOffset = topX + (i-1)*sqSize;
+		let yOffset = topY + (8-j)*sqSize;
+		cntx.fillRect(xOffset, yOffset, sqSize, sqSize);
+		var key = String.fromCharCode(i+96)+""+j;
+		if (position.hasOwnProperty(key)) {
+			var imgName = pieceImageNames[position[key]];
+			var img = new Image();
+			img.src = "../images/"+imgName;
+			img.onload = function() {
+				console.log(i+""+j);
+				cntx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
+				if (j>=8)
+				{
+					if (i>=8) {
+						return;
+					}
+					else {
+						draw(i+1, 1);
+					}
+				}
+				else {
+					draw(i, j+1);
+				}
+			};
+		}
+		else {
+			if (j>=8) {
+				if (i>=8) {
+					return;
+				}
+				else {
+					draw(i+1, 1);
+				}
+			}
+			else {
+				draw(i, j+1);
+			}
+		}
+	};
+	draw(1, 1);
+
+	/*for (let i=1;i<=8;i++) {
+		for (let j=1;j<=8;j++) {
+			cntx.fillStyle = ((i+j)%2==0) ? "#F5F5F5" : "#282828";
+			let xOffset = topX + (i-1)*sqSize;
+			let yOffset = topY + (8-j)*sqSize;
+			cntx.fillRect(xOffset, yOffset, sqSize, sqSize);
+			//now draw piece
+			var key = String.fromCharCode(i+96)+""+j;
+			//console.log(key);
+			if (position.hasOwnProperty(key)) {
+				var imgName = pieceImageNames[position[key]];
+				var img = new Image();
+				img.src = "../images/"+imgName;
+
+				/*img.onload = function()
+
+				function caller(other) {
+					other(xOffset, yOffset, img);
+				}
+				caller(function(xOffset, yOffset, img) {
+					cntx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
+					console.log(position[key]+""+key);
+				});*/
+				/*img.onload = function(xOffset, yOffset, img) {
+					//let the image load
+					cntx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
+					console.log(position[key]+""+key);
+				}*/
+				/*var img = pieceImages[key];
+				img.onload = function() {
+					cntx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
+				};*/
+				//console.log(position[key]+""+key);
+				//var img = new Image();
+				//console.log(key);
+				//console.log(position[key]);
+				//console.log('\n');
+				//img.src = "../images/"+getImage(position[key]);
+				/*img.onload = function() {
+					//let the image load
+					cntx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
+				};*/
+				//img.src = "../images/"+getImage(position[key]);
+				//console.log(img.src);
+				//cntx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
+				//drawPiece(position[key], key.charAt(0), key.charAt(1));
+			//}
+		//}
+	//}*/
+	ctx.strokeStyle = "black";
+	ctx.strokeRect(topX, topY, sqSize*8, sqSize*8);
 }
 
 function drawBoard() {
-	var canvas = document.getElementById("boardCanvas");
-	var ctx = canvas.getContext("2d");
+	ctx.save();
 	ctx.moveTo(0, 0);
 	var img = new Image();
 	img.src = "../images/chessboard.png";
 	ctx.drawImage(img, 400, 400);
+	//ctx.restore();
 }
 
 function drawPosition(position) {
-	drawBoard();
-	for (var key in position) {
+	//drawBoard();
+	drawChessBoard(position);
+	/*for (var key in position) {
 		if (position.hasOwnProperty(key))
 		{
-			drawPiece(position[key], key.charAt(0).concat(key.charAt(1)))
+			drawPiece(position[key], key.charAt(0), key.charAt(1))
 		}
-	}
+	}*/
 }
 
-drawPosition(initPos);
+function updateMove(move) {
+	var [pos, dest] = move.split('-');
+	if (currentPos.hasOwnProperty(pos)) {
+		currentPos[dest] = currentPos[pos];
+		delete currentPos[pos];
+	}
+	drawPosition(currentPos);
+}

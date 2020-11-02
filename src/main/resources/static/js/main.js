@@ -91,7 +91,7 @@ function onConnected() {
 	);
 
 	connectingElement.classList.add('hidden');
-	drawChessBoard(initPos);
+	//drawChessBoard(initPos);
 }
 
 function onError(error) {

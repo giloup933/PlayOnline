@@ -74,6 +74,7 @@ public class GameController {
 		msg.setType(Message.MessageType.FOLLOW);
 		msg.setSender("Server");
 		msg.setContent(this.game.toJson());
-		return message;
+		return msg;
+		//return message;
 	}
 }

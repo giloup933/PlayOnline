@@ -292,51 +292,40 @@ function drawPiece(piece, file, rank) {
 	ctx.restore();
 }
 
-function drawChessBoard(position) {
-	let i=1;
-	let j=1;
-	function draw(i, j) {
+/*function drawSquare(i, j) {
+	ctx.fillStyle = ((i+j)%2==1) ? "#F5F5F5" : "#282828";
+}*/
+
+function drawSquare(i, j) {
+		console.log("iw!");
 		ctx.fillStyle = ((i+j)%2==1) ? "#F5F5F5" : "#282828";
 		let xOffset = topX + (i-1)*sqSize;
 		let yOffset = topY + (8-j)*sqSize;
 		ctx.fillRect(xOffset, yOffset, sqSize, sqSize);
 		let key = String.fromCharCode(i+96)+""+j;
-		if (position.hasOwnProperty(key)) {
-			let imgName = pieceImageNames[position[key]];
+		//console.log(position);
+		//console.log(position[key]);
+		if (currentPos.hasOwnProperty(key)) {
+			//console.log("hello from inside");
+			let imgName = pieceImageNames[currentPos[key]];
 			let img = new Image();
 			img.src = "../images/"+imgName;
 			img.onload = function() {
 				//console.log(i+""+j);
 				ctx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
-				if (j>=8)
-				{
-					if (i>=8) {
-						return;
-					}
-					else {
-						draw(i+1, 1);
-					}
-				}
-				else {
-					draw(i, j+1);
-				}
-			};
+		};
+	}
+};
+	
+function drawChessBoard(position) {
+	let i=1;
+	let j=1;
+	console.log(position);
+	for (let i=1;i<=8;i++) {
+		for (let j=1;j<=8;j++) {
+			drawSquare(i, j);
 		}
-		else {
-			if (j>=8) {
-				if (i>=8) {
-					return;
-				}
-				else {
-					draw(i+1, 1);
-				}
-			}
-			else {
-				draw(i, j+1);
-			}
-		}
-	};
-	draw(1, 1);
+	}
 
 	/*for (let i=1;i<=8;i++) {
 		for (let j=1;j<=8;j++) {
@@ -346,7 +335,7 @@ function drawChessBoard(position) {
 			cntx.fillRect(xOffset, yOffset, sqSize, sqSize);
 			//now draw piece
 			var key = String.fromCharCode(i+96)+""+j;
-			//console.log(key);
+			console.log("square: "+key);
 			if (position.hasOwnProperty(key)) {
 				var imgName = pieceImageNames[position[key]];
 				var img = new Image();
@@ -418,7 +407,13 @@ function updateMove(move) {
 		delete currentPos[pos];
 	}
 	whitePlays = (whitePlays ? false : true);
-	drawPosition(currentPos);
+	//` is one before 'a' in ascii
+	//console.log(pos.charCodeAt(0)-'`'.charCodeAt(0));
+	//console.log(pos[1]);
+	drawSquare(pos.charCodeAt(0)-'`'.charCodeAt(0), parseInt(pos[1]));
+	drawSquare(dest.charCodeAt(0)-'`'.charCodeAt(0), parseInt(dest[1]));
+
+	//drawPosition(currentPos);
 }
 
 function getSquare(x, y) {

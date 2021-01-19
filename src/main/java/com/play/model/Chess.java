@@ -1,13 +1,104 @@
 package com.play.model;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedList;
 
 public class Chess extends Game{
+	static class Clock implements Runnable{
+		private Chess game;
+		private boolean gameNotOver;
+		private boolean isWhite;
+		private long msW;
+		private long msB;
+		private int increment;
+		private long lastPlayedTime;
+		private LocalDateTime lastMove;
+		Clock(Chess game, boolean isWhite, long seconds, int increment) {
+			this.game = game;
+			this.gameNotOver = true;
+			this.isWhite = isWhite;
+			this.msW = seconds*1000;
+			this.msB = seconds*1000;
+			this.increment = increment;
+			this.lastPlayedTime = System.currentTimeMillis();
+			this.lastMove = LocalDateTime.now();
+		}
+		public void playMove()
+		{
+			System.out.println("in playMove()");
+			//long ms = ChronoUnit.MILLIS.between(lastMove, LocalDateTime.now());
+			long ms = System.currentTimeMillis()-lastPlayedTime;
+			if (isWhite)
+			{
+				msW -= ms;
+				if (msW<=0) {
+					System.out.println("Time's up! 0-1");
+					gameNotOver = false;
+				}
+				else
+					msW += increment;
+			}
+			else
+			{
+				msB -= ms;
+				if (msB<=0) {
+					System.out.println("Time's up! 1-0");
+					gameNotOver = false;
+				}
+				else
+					msB += increment;
+			}
+			isWhite = isWhite ? false : true;
+			this.lastMove = LocalDateTime.now();
+			this.lastPlayedTime = System.currentTimeMillis();
+			this.notify();
+		}
+		public void loseOnTime() {
+			if (isWhite)
+			{
+				//System.out.println("Time's up! 0-1");
+				this.game.endGame("time-white");
+			}
+			else
+			{
+				//System.out.println("Time's up! 1-0");
+				this.game.endGame("time-black");
+			}
+			gameNotOver = false;
+		}
+		@Override
+		public void run() {
+			while (gameNotOver)
+			{
+				long ms = isWhite ? msW : msB;
+				try {
+					System.out.println("wait "+ms+" milliseconds for "+ (isWhite ? "white" : "black"));
+					synchronized(this) {
+						this.wait(ms);
+						loseOnTime();
+					}
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		public String toString() {
+			String s = msW+" - "+msB;
+			return s;
+		}
+	}
 	private LinkedList<Piece> white;
 	private LinkedList<Piece> black;
+	
+	
 	boolean whitePlays;
 	boolean drawOffered;
 	boolean[] canCastle;
+	
+	Clock clock;
 	public Chess() {
 		white = new LinkedList<>();
 		black = new LinkedList<>();
@@ -47,6 +138,10 @@ public class Chess extends Game{
 		black.add(new Rook(false, new Square('h', 8)));
 		black.add(new Queen(false, new Square('d', 8)));
 		black.add(new King(false, new Square('e', 8)));
+		this.clock = new Clock(this, true, 180, 5);
+		synchronized(this.clock) {
+			new Thread(this.clock).start();
+		}
 	}
 	public class Square {
 		private char file;
@@ -82,8 +177,6 @@ public class Chess extends Game{
 			return getFile()+""+getRank();
 		}
 	}
-	
-	
 	abstract class Piece {
 		abstract boolean isWhite();
 		abstract Square getPosition();
@@ -368,11 +461,11 @@ public class Chess extends Game{
 			if (isWhite)
 				castleLn=1;
 			if (getPosition().equals(new Square('e', castleLn))) {
-				if (dest.equals(new Square('g', castleLn))) {
-					
+				if (dest.equals(new Square('g', castleLn)) && canCastle[isWhite ? 0 : 2]) {
+					return true;
 				}
-				else if (dest.equals(new Square('c', castleLn))) {
-					
+				else if (dest.equals(new Square('c', castleLn)) && canCastle[isWhite ? 1 : 3]) {
+					return true;
 				}
 			}
 			return false;
@@ -418,8 +511,12 @@ public class Chess extends Game{
 			return piece+""+pos.toString();
 		}
 	}
-	
-	
+	public long getTimeWhite() {
+		return clock.msW;
+	}
+	public long getTimeBlack() {
+		return clock.msB;
+	}
 	boolean moveLegalWithCheck(Square pos, Square dest) {
 		//this move checks if the king is checked, and if so, if the move proposed clears it
 		return true;
@@ -451,7 +548,7 @@ public class Chess extends Game{
 			player = black;
 		for (Piece p: player) {
 			if (p.getPosition().equals(pos)) {
-				System.out.println("a piece is there");
+				System.out.println("good! a piece is ready to move!");
 				for (Piece p1: player) {
 					//check to see no piece stands in the destination
 					if (!p.equals(p1))
@@ -512,6 +609,10 @@ public class Chess extends Game{
 				whitePlays = whitePlays ^ true;
 			}
 		}
+		System.out.println("wake the clock up!");
+		synchronized(this.clock) {
+			this.clock.playMove();
+		}
 		System.out.println(this.toString());
 	}
 	boolean hasLegalMove() {
@@ -548,6 +649,25 @@ public class Chess extends Game{
 			return "STALEMATE";
 		}
 	}
+	public void endGame(String code) {
+		if (code.equals("time-white")) {
+			System.out.println("White ran out of time! 0-1");
+		} else if (code.equals("time-black")) {
+			System.out.println("Black ran out of time! 1-0");
+		} else if (code.equals("resign-white")) {
+			System.out.println("White resigns! 0-1");
+		} else if (code.equals("resign-black")) {
+			System.out.println("Black resigns! 1-0");
+		} else if (code.equals("checkmate-white")) {
+			System.out.println("Checkmate! 0-1");
+		} else if (code.equals("checkmate-black")) {
+			System.out.println("Checkmate! 1-0");
+		} else if (code.equals("stalemate")) {
+			System.out.println("Draw by stalemate!");
+		} else if (code.equals("agreed")) {
+			System.out.println("Draw by agreement.");
+		}
+	}
 	public String resign() {
 		if (whitePlays)
 			return "0-1";
@@ -573,6 +693,25 @@ public class Chess extends Game{
 		}
 		str+="}\n";
 		str+= whitePlays ? "white to play" : "black to play";
+		str+= "\n" + clock.toString();
+		return str;
+	}
+	
+	public String toJson() {
+		String str = "{ \"white\": [";
+		for (Piece p: white) {
+			str += String.format("\"%s\", ", p.toString());
+		}
+		str = str.substring(0, str.length()-2) + "], \"black\": [";
+		for (Piece p: black) {
+			str += String.format("\"%s\", ", p.toString());
+		}
+		str = str.substring(0, str.length()-2) + "], ";
+		str += "\"timeWhite\": "+this.getTimeWhite()+", \"timeBlack\": "+this.getTimeBlack();
+		//str += "\"lastPlayed: \""+
+		//System.out.println(clock.lastPlayedTime+"!!!");
+		str += ", \"lastPlayed\": "+clock.lastPlayedTime+", \"whitePlays\": "+this.whitePlays;
+		str += "}";
 		return str;
 	}
 }

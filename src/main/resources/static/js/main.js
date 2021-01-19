@@ -2,11 +2,13 @@
 
 var usernamePage = document.querySelector('#username-page');
 var usernameForm = document.querySelector('#usernameForm');
-//works?
-//and now?
 var chatWindow = document.querySelector('#chat-window');
 var game = document.querySelector('#game');
 var board = document.querySelector('#board');
+var clockWhite = document.querySelector('#clockWhite');
+var clockBlack = document.querySelector('#clockBlack');
+var infoWhite = document.querySelector('#infoWhite');
+var infoBlack = document.querySelector('#infoBlack');
 var moveForm = document.querySelector('#moveForm');
 var messageForm = document.querySelector('#messageForm');
 var messageInput = document.querySelector('#message');
@@ -18,6 +20,10 @@ var username = null;
 
 var currentPos = null;
 var initPos = null;
+
+var timeWhite = 180000;
+var timeBlack = 180000;
+var whitePlays = true;
 
 var canvas = document.getElementById("boardCanvas");
 var ctx = canvas.getContext("2d");
@@ -64,6 +70,36 @@ var initPos = {
 
 currentPos = initPos;
 
+setInterval(function() {
+	if (whitePlays && timeWhite != 'undefined') {
+		timeWhite -= 100;
+	}
+	else if (timeBlack != 'undefined'){
+		timeBlack -= 100;
+	}
+	showUpdatedTimes();
+} ,100);
+
+function showUpdatedTimes() {
+	document.getElementById("clockWhite").innerHTML = prettifyTime(timeWhite);
+	document.getElementById("clockBlack").innerHTML = prettifyTime(timeBlack);
+}
+
+function prettifyTime(time) {
+	let mn = Math.floor(Math.abs(time/60000));
+	let sec = Math.floor(Math.abs(time%60000)/1000);
+	let ms = Math.floor((Math.abs(time%60000)%1000)/100);
+	let prettyTime = mn.toString().padStart(1, '0') + ":" + sec.toString().padStart(2, '0');
+	if (mn==0 && sec<20) {
+		prettyTime += "." + ms.toString();
+	}
+	if (time<0) {
+		prettyTime = "-" + prettyTime;
+	}
+	//console.log(prettyTime);
+	return prettyTime;
+}
+
 function connect(event) {
 	username = document.querySelector('#name').value.trim();
 
@@ -84,6 +120,8 @@ function onConnected() {
 	chatWindow.classList.remove('hidden');
 	game.classList.remove('hidden');
 	board.classList.remove('hidden');
+	clockWhite.classList.remove('hidden');
+	clockBlack.classList.remove('hidden');
 	stompClient.subscribe('/topic/public', onMessageReceived);
 	stompClient.send("/app/chat.addUser", 
 		{},
@@ -92,6 +130,11 @@ function onConnected() {
 
 	connectingElement.classList.add('hidden');
 	//drawChessBoard(initPos);
+	let followMessage = {
+			sender: username,
+			type: 'FOLLOW'
+		};
+	stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(followMessage));
 }
 
 function onError(error) {
@@ -120,7 +163,7 @@ function sendMessage(event) {
 	if (messageContent && stompClient) {
 		let chatMessage = {
 			sender: username,
-			content: messageInput.value,
+			content: username+": "+messageInput.value,
 			type: 'CHAT'
 		};
 		stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
@@ -140,11 +183,59 @@ function onMessageReceived(payload) {
 		messageElement.classList.add('event-message');
 		message.content = message.sender + ' left!';
 	} else if (message.type === 'PLAY') {
-		messageElement.classList.add('event-message');
+		//messageElement.classList.add('event-message');
 		updateMove(message.content);
 		message.content = message.sender + ' played '+message.content;
-	} else {
-		messageElement.classList.add('chat-message');
+	} else if (message.type === 'UPDATE') {
+		let c = JSON.stringify(message.content);
+		let content = JSON.parse(message.content);
+		//messageElement.classList.add('event-message');
+		updateMove(content.move);
+		timeWhite = content.timeWhite;
+		timeBlack = content.timeBlack;
+		return;
+	} else if (message.type === 'FOLLOW') {
+		let content = JSON.parse(message.content);
+		//messageElement.classList.add('event-message');
+		currentPos = {};
+		for (let i in content.white) {
+			let p = content.white[i];
+			if (p.length==3) {
+				currentPos[p.substring(1,3)] = p[0];
+			}
+			else {
+				currentPos[p] = "P";
+			}
+		}
+		for (let i in content.black) {
+			let p = content.black[i];
+			if (p.length==3) {
+				currentPos[p.substring(1,3)] = p[0];
+			}
+			else {
+				currentPos[p] = "p";
+			}
+		}
+		whitePlays = content.whitePlays;
+		timeWhite = content.timeWhite;
+		timeBlack = content.timeBlack;
+		if (whitePlays) {
+			if (!Date.now) {
+    			Date.now = function() { return new Date().getTime(); }
+			}
+			timeWhite -= Date.now() - content.lastPlayed;
+		}
+		else {
+			if (!Date.now) {
+    			Date.now = function() { return new Date().getTime(); }
+			}
+			timeBlack -= Date.now() - content.lastPlayed;
+		}
+		drawPosition(currentPos);
+		return;
+	}
+	else {
+		//messageElement.classList.add('chat-message');
 	}
 	let textElement = document.createElement('p');
 	let messageText = document.createTextNode(message.content);
@@ -326,6 +417,7 @@ function updateMove(move) {
 		currentPos[dest] = currentPos[pos];
 		delete currentPos[pos];
 	}
+	whitePlays = (whitePlays ? false : true);
 	drawPosition(currentPos);
 }
 
@@ -338,7 +430,7 @@ function getSquare(x, y) {
 		return '';
 	}
 	let key = String.fromCharCode(file+96)+""+rank;
-	console.log(key);
+	//console.log(key);
 	return key;
 }
 

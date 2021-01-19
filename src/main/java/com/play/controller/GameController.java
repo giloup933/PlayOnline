@@ -20,6 +20,7 @@ public class GameController {
 	@MessageMapping("/chat.sendMessage")
 	@SendTo("/topic/public")
 	public Message sendMessage(@Payload Message message) throws Exception {
+		System.out.println(message.toString());
 		Message.MessageType type = message.getType();
 		if (type == Message.MessageType.RESIGN) {
 			throw new Exception("Not supported yet");
@@ -33,10 +34,28 @@ public class GameController {
 			boolean playMove = game.playMove(move);
 			if (!playMove)
 				throw new Exception("illegal input: "+move);
-			return message;
+			Message msg = new Message();
+			msg.setType(Message.MessageType.UPDATE);
+			msg.setSender("Server");
+			msg.setContent("{\"move\": \""+move+"\", \"timeWhite\": "+this.game.getTimeWhite()+", \"timeBlack\": "+this.game.getTimeBlack()+"}");
+			return msg;
+		}
+		else if (type == Message.MessageType.FOLLOW) {
+			Message msg = new Message();
+			msg.setType(Message.MessageType.FOLLOW);
+			msg.setSender("Server");
+			msg.setContent(this.game.toJson());
+			return msg;
 		}
 		else if (type == Message.MessageType.JOIN) {
-			return message;
+			System.out.println(message.getSender()+", "+message.getType());
+			Message msg = new Message();
+			msg.setType(Message.MessageType.FOLLOW);
+			msg.setSender("Server");
+			msg.setContent(this.game.toJson());
+			
+			//return message;
+			return msg;
 		}
 		return message;
 	}
@@ -46,5 +65,15 @@ public class GameController {
 	public Message addUser(@Payload Message chatMessage, SimpMessageHeaderAccessor headerAccessor) {
 		headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
 		return chatMessage;
+	}
+	
+	@MessageMapping("/game.follow")
+	@SendTo("/topic/public/mapping")
+	public Message follow(@Payload Message chatMessage, SimpMessageHeaderAccessor headerAccessor) {
+		Message msg = new Message();
+		msg.setType(Message.MessageType.FOLLOW);
+		msg.setSender("Server");
+		msg.setContent(this.game.toJson());
+		return message;
 	}
 }

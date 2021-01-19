@@ -11,7 +11,9 @@ public class Message {
 		RESIGN,
 		CHAT,
 		JOIN,
-		LEAVE
+		LEAVE,
+		UPDATE,
+		FOLLOW
 	}
 
 	public MessageType getType() {

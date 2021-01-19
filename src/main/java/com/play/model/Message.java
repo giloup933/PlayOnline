@@ -6,6 +6,7 @@ public class Message {
 	private String content;
 	
 	public enum MessageType {
+		RESET,
 		PLAY,
 		DRAW,
 		RESIGN,

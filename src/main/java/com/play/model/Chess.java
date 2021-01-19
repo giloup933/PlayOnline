@@ -138,7 +138,7 @@ public class Chess extends Game{
 		black.add(new Rook(false, new Square('h', 8)));
 		black.add(new Queen(false, new Square('d', 8)));
 		black.add(new King(false, new Square('e', 8)));
-		this.clock = new Clock(this, true, 180, 5);
+		this.clock = new Clock(this, true, 3600, 5);
 		synchronized(this.clock) {
 			new Thread(this.clock).start();
 		}
@@ -170,11 +170,14 @@ public class Chess extends Game{
 		@Override
 		public boolean equals(Object e) {
 			Square s = (Square)e;
-			return getFile()==s.getFile() && getRank()==s.getRank();
+			System.out.println(s.toString());
+			System.out.println(this.toString());
+			System.out.println();
+			return this.getFile()==s.getFile() && this.getRank()==s.getRank();
 		}
 		@Override
 		public String toString() {
-			return getFile()+""+getRank();
+			return this.getFile()+""+this.getRank();
 		}
 	}
 	abstract class Piece {
@@ -481,6 +484,7 @@ public class Chess extends Game{
 				//castle, move only the rook as the king will be moved after this if block
 				if (dest.equals(new Square('g', castleLn))) {
 					for (Piece p: (isWhite ? white : black)) {
+						System.out.println(p.getPosition().toString());
 						if (p.getPosition().equals(new Square('h', castleLn))) {
 							p.move(new Square('f', castleLn));
 							break;

@@ -19,10 +19,10 @@ var stompClient = null;
 var username = null;
 
 var currentPos = null;
-var initPos = null;
+//var initPos = null;
 
-var timeWhite = 180000;
-var timeBlack = 180000;
+var timeWhite = 3600000;
+var timeBlack = 3600000;
 var whitePlays = true;
 
 var canvas = document.getElementById("boardCanvas");
@@ -33,7 +33,7 @@ var topY = 50;
 
 var origin = null;
 
-var initPos = {
+const initPos = {
 	'a2': 'P',
 	'b2': 'P',
 	'c2': 'P',
@@ -158,6 +158,15 @@ function playMove(event) {
 	event.preventDefault();
 }
 
+function sendReset() {
+	let resetMessage = {
+		sender: username,
+		type: 'RESET'
+	};
+	stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(resetMessage));
+	messageInput.value = '';
+}
+
 function sendMessage(event) {
 	let messageContent = messageInput.value.trim();
 	if (messageContent && stompClient) {
@@ -182,6 +191,15 @@ function onMessageReceived(payload) {
 	} else if (message.type === 'LEAVE') {
 		messageElement.classList.add('event-message');
 		message.content = message.sender + ' left!';
+	} else if (message.type === 'RESET') {
+		message.content = 'Game reset';
+		currentPos = {};
+		Object.assign(currentPos, initPos);
+		//currentPos = initPos;
+		timeWhite = 3600000;
+		timeBlack = 3600000;
+		whitePlays = true;
+		drawPosition(currentPos);
 	} else if (message.type === 'PLAY') {
 		//messageElement.classList.add('event-message');
 		updateMove(message.content);
@@ -412,7 +430,19 @@ function updateMove(move) {
 	//console.log(pos[1]);
 	drawSquare(pos.charCodeAt(0)-'`'.charCodeAt(0), parseInt(pos[1]));
 	drawSquare(dest.charCodeAt(0)-'`'.charCodeAt(0), parseInt(dest[1]));
-
+	if ((pos=='e1' && dest=='g1') || (pos=='e1' && dest=='c1') || (pos=='e8' && dest=='g8') || (pos=='e8' && dest=='c8'))
+	{
+		if (currentPos[pos]=='K' || currentPos[pos]=='k')
+		{
+			let side = dest[1];
+			let flank = dest[0];
+			if (dest[0]=='h')
+			{
+				whitePlays = (whitePlays ? false : true);
+				updateMove('e'+side+'-'+flank+side);
+			}
+		}
+	}
 	//drawPosition(currentPos);
 }
 

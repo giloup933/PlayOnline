@@ -57,6 +57,10 @@ public class GameController {
 			//return message;
 			return msg;
 		}
+		else if (type == Message.MessageType.RESET) {
+			this.game = new Chess();
+			return message;
+		}
 		return message;
 	}
 	

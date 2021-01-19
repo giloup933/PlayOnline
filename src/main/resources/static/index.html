@@ -21,6 +21,22 @@
 				</form>
 			</div>
 		</div>
+		
+		<div id="chat-window" class="hidden" style="float: right; width: 30%">
+				<div class="chat-container">
+					<div class="chat-header">
+						<h5>Game Chat</h5>
+					</div>
+					<ul id="messageArea">
+					</ul>
+					<div class="chat-send">
+						<form id="messageForm" name="messageForm">
+							<input type="text" id="message" placeholder="Type a message..." autocomplete="off" class="form-control" />
+							<button type="submit" class="primary">Send Message </button>
+						</form>
+					</div>
+				</div>
+			</div>
 
 		<div id="game" class="hidden">
 			<form id="moveForm" name="movForm">
@@ -55,21 +71,6 @@
 			connecting...
 		</div>
 
-		<div id="chat-window" class="hidden">
-			<div class="chat-container">
-				<div class="chat-header">
-					<h5>Game Chat</h5>
-				</div>
-				<ul id="messageArea">
-				</ul>
-				<div class="chat-send">
-					<form id="messageForm" name="messageForm">
-						<input type="text" id="message" placeholder="Type a message..." autocomplete="off" class="form-control" />
-						<button type="submit" class="primary">Send Message </button>
-					</form>
-				</div>
-			</div>
-		</div>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.4/sockjs.min.js"></script>
     	<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     	<script src="/js/main.js"></script>

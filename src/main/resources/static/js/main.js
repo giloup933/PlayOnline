@@ -315,7 +315,6 @@ function drawPiece(piece, file, rank) {
 }*/
 
 function drawSquare(i, j) {
-		console.log("iw!");
 		ctx.fillStyle = ((i+j)%2==1) ? "#F5F5F5" : "#282828";
 		let xOffset = topX + (i-1)*sqSize;
 		let yOffset = topY + (8-j)*sqSize;
@@ -338,7 +337,6 @@ function drawSquare(i, j) {
 function drawChessBoard(position) {
 	let i=1;
 	let j=1;
-	console.log(position);
 	for (let i=1;i<=8;i++) {
 		for (let j=1;j<=8;j++) {
 			drawSquare(i, j);
@@ -353,7 +351,6 @@ function drawChessBoard(position) {
 			cntx.fillRect(xOffset, yOffset, sqSize, sqSize);
 			//now draw piece
 			var key = String.fromCharCode(i+96)+""+j;
-			console.log("square: "+key);
 			if (position.hasOwnProperty(key)) {
 				var imgName = pieceImageNames[position[key]];
 				var img = new Image();
@@ -366,12 +363,10 @@ function drawChessBoard(position) {
 				}
 				caller(function(xOffset, yOffset, img) {
 					cntx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
-					console.log(position[key]+""+key);
 				});*/
 				/*img.onload = function(xOffset, yOffset, img) {
 					//let the image load
 					cntx.drawImage(img, xOffset, yOffset, sqSize, sqSize);
-					console.log(position[key]+""+key);
 				}*/
 				/*var img = pieceImages[key];
 				img.onload = function() {
